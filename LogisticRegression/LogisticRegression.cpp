@@ -75,11 +75,79 @@ void LogisticRegression::grad(const cv::Mat_<double>& X, const cv::Mat_<double>&
 		for (int c = 0; c < dW.cols; ++c) {
 			for (int i = 0; i < N; ++i) {
 				dW(r, c) -= (Y(i, c) - Y_hat(i, c)) * X(i, r);
-				db(r, c) -= Y(i, c) - Y_hat(i, c);
 			}
 			dW(r, c) = dW(r, c) / N + 2 * lambda * W(r, c);
-			db(r, c) = db(r, c) / N;
+		}
+	}
+	for (int c = 0; c < db.cols; ++c) {
+		for (int i = 0; i < N; ++i) {
+			db(0, c) -= Y(i, c) - Y_hat(i, c);
+		}
+		db(0, c) = db(0, c) / N;
+	}
+
+	// デバッグ
+	cv::Mat_<double> theta1;
+	encodeParam(dW, db, theta1);
+	cv::Mat_<double> theta2;
+	numericalGrad(X, Y, lambda, dW, db);
+	encodeParam(dW, db, theta2);
+	for (int i = 0; i < theta1.cols; ++i) {
+		cout << theta1(0, i) << ", " << theta2(0, i) << ", " << theta1(0, i) - theta2(0, i) << endl;
+	}
+}
+
+void LogisticRegression::numericalGrad(const cv::Mat_<double>& X, const cv::Mat_<double>& Y, float lambda, cv::Mat_<double>& dW, cv::Mat_<double>& db) {
+	cv::Mat_<double> backup_W, backup_b;
+	W.copyTo(backup_W);
+	b.copyTo(backup_b);
+
+	cv::Mat_<double> theta;
+	encodeParam(W, b, theta);
+	cv::Mat_<double> g(theta.size());
+	double epsilon = 0.0001;
+	for (int i = 0; i < theta.cols; ++i) {
+		cv::Mat_<double> d_theta = cv::Mat_<double>::zeros(theta.size());
+		d_theta(0, i) = epsilon;
+
+		decodeParam(theta + d_theta, W, b);
+		double c1 = cost(X, Y, lambda);
+		decodeParam(theta - d_theta, W, b);
+		double c2 = cost(X, Y, lambda);
+
+		g(0, i) = (c1 - c2) / 2.0 / epsilon;
+	}
+	decodeParam(g, dW, db);
+
+	backup_W.copyTo(W);
+	backup_b.copyTo(b);
+}
+
+void LogisticRegression::encodeParam(const cv::Mat_<double>& W, const cv::Mat_<double>& b, cv::Mat_<double>& theta) {
+	theta = cv::Mat_<double>(1, W.rows * W.cols + b.rows * b.cols);
+	int index = 0;
+	for (int c = 0; c < W.cols; ++c) {
+		for (int r = 0; r < W.rows; ++r) {
+			theta(0, index++) = W(r, c);
+		}
+	}
+	for (int c = 0; c < b.cols; ++c) {
+		for (int r = 0; r < b.rows; ++r) {
+			theta(0, index++) = b(r, c);
 		}
 	}
 }
 
+void LogisticRegression::decodeParam(const cv::Mat_<double>& theta, cv::Mat_<double>& W, cv::Mat_<double>& b) {
+	int index = 0;
+	for (int c = 0; c < W.cols; ++c) {
+		for (int r = 0; r < W.rows; ++r) {
+			W(r, c) = theta(0, index++);
+		}
+	}
+	for (int c = 0; c < b.cols; ++c) {
+		for (int r = 0; r < b.rows; ++r) {
+			b(r, c) = theta(0, index++);
+		}
+	}
+}
