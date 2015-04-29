@@ -36,6 +36,21 @@ cv::Mat_<double> LogisticRegression::predict(const cv::Mat_<double>& X) {
 
 void LogisticRegression::train(const cv::Mat_<double>& X, const cv::Mat_<double>& Y, float lambda, float alpha, int maxIter) {
 	cv::Mat_<double> dW, db;
+
+	// デバッグ（微分の実装が正しいか、チェック）
+	cv::Mat_<double> theta1, theta2;
+	grad(X, Y, lambda, dW, db);
+	encodeParam(dW, db, theta1);
+	numericalGrad(X, Y, lambda, dW, db);
+	encodeParam(dW, db, theta2);
+	for (int i = 0; i < theta1.cols; ++i) {
+		cout << theta1(0, i) << ", " << theta2(0, i) << ", " << theta1(0, i) - theta2(0, i) << endl;
+		if (abs(theta1(0, i) - theta2(0, i)) > 0.0000001) {
+			cout << "There seems to be something wrong with derivatives." << endl;
+			return;
+		}
+	}
+
 	for (int iter = 0; iter < maxIter; ++iter) {
 		double c = cost(X, Y, lambda);
 		cout << "Cost: " << c << endl;
@@ -84,16 +99,6 @@ void LogisticRegression::grad(const cv::Mat_<double>& X, const cv::Mat_<double>&
 			db(0, c) -= Y(i, c) - Y_hat(i, c);
 		}
 		db(0, c) = db(0, c) / N;
-	}
-
-	// デバッグ
-	cv::Mat_<double> theta1;
-	encodeParam(dW, db, theta1);
-	cv::Mat_<double> theta2;
-	numericalGrad(X, Y, lambda, dW, db);
-	encodeParam(dW, db, theta2);
-	for (int i = 0; i < theta1.cols; ++i) {
-		cout << theta1(0, i) << ", " << theta2(0, i) << ", " << theta1(0, i) - theta2(0, i) << endl;
 	}
 }
 

@@ -29,7 +29,7 @@ int main() {
 
 	cv::Mat_<uchar> img = cv::Mat_<uchar>::ones(100, 100) * 255;
 
-	LogisticRegression lr(X, Y, 0.01f, 0.1f, 10000);
+	LogisticRegression lr(X, Y, 0.01f, 0.1f, 100);
 	for (int i = 0; i < N; ++i) {
 		cv::Mat_<double> x(1, 1);
 		x(0, 0) = (double)i / (double)N * 2.0 - 1.0;
