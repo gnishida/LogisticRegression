@@ -72,7 +72,7 @@ double LogisticRegression::cost(const cv::Mat_<double>& X, const cv::Mat_<double
 	cv::Mat_<double> entropy;
 	cv::reduce(Y.mul(log_y_hat) + (1 - Y).mul(log_one_minus_y_hat), entropy, 0, CV_REDUCE_AVG);
 
-	cv::reduce(entropy, entropy, 1, CV_REDUCE_AVG);
+	cv::reduce(entropy, entropy, 1, CV_REDUCE_SUM);
 
 	double n = cv::norm(W);
 	double cost = -entropy(0, 0) + lambda * n * n;
